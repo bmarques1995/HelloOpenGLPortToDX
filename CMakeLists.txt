@@ -8,6 +8,6 @@ file(GLOB_RECURSE PROJ_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "src/lib/*.c
 
 if(WIN32)
 add_executable(HelloOpenGLPortToDX WIN32 ${PROJ_SOURCES})
-target_include_directories(HelloOpenGLPortToDX PRIVATE "./src/include" "./vendor/glfw/include")
-#target_link_libraries(HelloOpenGLPortToDX PRIVATE )
+target_include_directories(HelloOpenGLPortToDX PRIVATE "./src/include")
+target_link_libraries(HelloOpenGLPortToDX PRIVATE d3d11 dxgi d3dcompiler)
 endif()

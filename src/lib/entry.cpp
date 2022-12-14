@@ -1,5 +1,6 @@
 #include <sstream>
 #include <windows.h>
+#include <d3d11_4.h>
 
 int program();
 
@@ -54,7 +55,7 @@ int program()
     (
         0,
         L"Hello DirectX",
-        L"Hello DirectX",
+        L"Hello World",
         windowedFlags,
         100,
         100,
@@ -66,7 +67,8 @@ int program()
         nullptr
     );
 
-    auto x = GetLastError();
+    if (GetLastError() != 0)
+        return -1;
 
     ShowWindow(window, cmdShow);
     UpdateWindow(window);
@@ -76,8 +78,61 @@ int program()
 
     //Graphics
 
+    ID3D11Device* device;
+    ID3D11DeviceContext* deviceContext;
+    IDXGISwapChain* swapChain;
+    ID3D11RenderTargetView* renderTargetView;
+
+    DXGI_SWAP_CHAIN_DESC swapChainDesc = {0};
+    swapChainDesc.BufferDesc.RefreshRate.Numerator = 0;
+    swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
+    swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    swapChainDesc.SampleDesc.Count = 1;
+    swapChainDesc.SampleDesc.Quality = 0;
+    swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    swapChainDesc.BufferCount = 3;
+    swapChainDesc.OutputWindow = window;
+    swapChainDesc.Windowed = true;
+    swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+
+    D3D_FEATURE_LEVEL fl;
+    UINT flags = 0;
+#if defined( DEBUG ) || defined( _DEBUG )
+    flags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
+
+    HRESULT hr;
+    hr = D3D11CreateDeviceAndSwapChain
+    (
+        NULL,
+        D3D_DRIVER_TYPE_HARDWARE,
+        NULL,
+        flags,
+        NULL,
+        0,
+        D3D11_SDK_VERSION,
+        &swapChainDesc,
+        &swapChain,
+        &device,
+        &fl,
+        &deviceContext
+    );
+
+    if (hr != S_OK)
+        return -2;
+
+    ID3D11Texture2D* pBackBuffer;
+    swapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
+    hr = device->CreateRenderTargetView(pBackBuffer, NULL, &renderTargetView);
+    if (hr != S_OK)
+        return -3;
+    pBackBuffer->Release();
+
+    float color[4] = {.7f, .3f,.9f, 1.0f};
+
     while (!shouldStop)
     {
+        //window loop
         if (::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
         {
             ::TranslateMessage(&msg);
@@ -85,6 +140,10 @@ int program()
             if ((msg.message == WM_QUIT)||(msg.message == WM_CLOSE))
                 shouldStop = true;
         }
+        //graphics loop
+        deviceContext->OMSetRenderTargets(1, &renderTargetView, NULL);
+        deviceContext->ClearRenderTargetView(renderTargetView, color);
+        swapChain->Present(1, 0);
     }
     return 0;
 }
