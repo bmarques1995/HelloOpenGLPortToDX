@@ -6,11 +6,15 @@
 #include <dxgi1_6.h>
 #include <cstdint>
 
+#include <wrl.h>
+
+using Microsoft::WRL::ComPtr;
+
 namespace APILearning
 {
 	struct FrameContext
 	{
-		ID3D12CommandAllocator* CommandAllocator;
+		ComPtr<ID3D12CommandAllocator> CommandAllocator;
 		uint64_t FenceValue;
 	};
 
@@ -26,15 +30,15 @@ namespace APILearning
 	private:
 		float m_ClearColor[4];
 
-		IDXGISwapChain3* m_SwapChain;
+		ComPtr<IDXGISwapChain3> m_SwapChain;
 		HANDLE m_SwapChainWaitableObject;
-		ID3D12Device* m_Device;
-		ID3D12DescriptorHeap* m_RenderTargetViewDescHeap;
-		ID3D12Resource** m_RenderTargetResource;
-		ID3D12DescriptorHeap* m_SourceDescHeap;
-		ID3D12CommandQueue* m_CommandQueue;
-		ID3D12GraphicsCommandList* m_CommandList;
-		ID3D12Fence* m_Fence;
+		ComPtr<ID3D12Device> m_Device;
+		ComPtr<ID3D12DescriptorHeap> m_RenderTargetViewDescHeap;
+		ComPtr<ID3D12Resource>* m_RenderTargetResource;
+		ComPtr<ID3D12DescriptorHeap> m_SourceDescHeap;
+		ComPtr<ID3D12CommandQueue> m_CommandQueue;
+		ComPtr<ID3D12GraphicsCommandList> m_CommandList;
+		ComPtr<ID3D12Fence> m_Fence;
 		HANDLE m_FenceEvent;
 		D3D12_CPU_DESCRIPTOR_HANDLE* m_RenderTargetDescriptor;
 		FrameContext* m_FrameContext;

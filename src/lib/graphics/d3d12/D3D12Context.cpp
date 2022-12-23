@@ -32,7 +32,7 @@ APILearning::D3D12Context::D3D12Context(HWND windowHandle, uint32_t numBackBuffe
 #endif
 
 	D3D_FEATURE_LEVEL featureLevel = D3D_FEATURE_LEVEL_12_0;
-	hr = D3D12CreateDevice(nullptr, featureLevel, IID_PPV_ARGS(&m_Device));
+	hr = D3D12CreateDevice(nullptr, featureLevel, IID_PPV_ARGS(m_Device.GetAddressOf()));
 	assert(hr == S_OK);
 
 #if defined (_DEBUG) || defined(DEBUG)
@@ -53,7 +53,7 @@ APILearning::D3D12Context::D3D12Context(HWND windowHandle, uint32_t numBackBuffe
 	heapDesc.NumDescriptors = m_BackBuffersAmount;
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	heapDesc.NodeMask = 1;
-	hr = m_Device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_RenderTargetViewDescHeap));
+	hr = m_Device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(m_RenderTargetViewDescHeap.GetAddressOf()));
 	assert(hr == S_OK);
 
 	size_t rtvDescriptorSize = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
@@ -69,30 +69,30 @@ APILearning::D3D12Context::D3D12Context(HWND windowHandle, uint32_t numBackBuffe
 	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	heapDesc.NumDescriptors = 1;
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	hr = m_Device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_SourceDescHeap));
+	hr = m_Device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(m_SourceDescHeap.GetAddressOf()));
 	assert(hr == S_OK);
 
 	D3D12_COMMAND_QUEUE_DESC queueDesc;
 	queueDesc = {};
 	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-	hr = m_Device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_CommandQueue));
+	hr = m_Device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(m_CommandQueue.GetAddressOf()));
 	assert(hr == S_OK);
 
 	m_FrameContext = new FrameContext[m_FramesInFlightAmount];
 	for (uint32_t i = 0; i < m_FramesInFlightAmount; i++)
 	{
 		m_FrameContext[i].FenceValue = 0;
-		hr = m_Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_FrameContext[i].CommandAllocator));
+		hr = m_Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(m_FrameContext[i].CommandAllocator.GetAddressOf()));
 		assert(hr == S_OK);
 	}
 
-	hr = m_Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_FrameContext[0].CommandAllocator, nullptr, IID_PPV_ARGS(&m_CommandList));
+	hr = m_Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_FrameContext[0].CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_CommandList));
 	assert(hr == S_OK);
 	hr = m_CommandList->Close();
 	assert(hr == S_OK);
 
-	hr = m_Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_Fence));
+	hr = m_Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_Fence.GetAddressOf()));
 	assert(hr == S_OK);
 
 	m_FenceEvent = CreateEvent(nullptr, false, false, nullptr);
@@ -102,16 +102,16 @@ APILearning::D3D12Context::D3D12Context(HWND windowHandle, uint32_t numBackBuffe
 	IDXGISwapChain1* swapChainTemp = nullptr;
 	hr = CreateDXGIFactory1(IID_PPV_ARGS(&dxgiFactory));
 	assert(hr == S_OK);
-	hr = dxgiFactory->CreateSwapChainForHwnd(m_CommandQueue, windowHandle, &swapChainDesc, nullptr, nullptr, &swapChainTemp);
+	hr = dxgiFactory->CreateSwapChainForHwnd(m_CommandQueue.Get(), windowHandle, &swapChainDesc, nullptr, nullptr, &swapChainTemp);
 	assert(hr == S_OK);
-	hr = swapChainTemp->QueryInterface(IID_PPV_ARGS(&m_SwapChain));
+	hr = swapChainTemp->QueryInterface(IID_PPV_ARGS(m_SwapChain.GetAddressOf()));
 	assert(hr == S_OK);
 	swapChainTemp->Release();
 	dxgiFactory->Release();
 	m_SwapChain->SetMaximumFrameLatency(m_BackBuffersAmount);
 	m_SwapChainWaitableObject = m_SwapChain->GetFrameLatencyWaitableObject();
 
-	m_RenderTargetResource = new ID3D12Resource * [m_BackBuffersAmount];
+	m_RenderTargetResource = new ComPtr<ID3D12Resource>[m_BackBuffersAmount];
 
 	for (uint32_t i = 0; i < m_BackBuffersAmount; i++)
 	{
@@ -153,29 +153,29 @@ void APILearning::D3D12Context::Update()
 	frameContext->CommandAllocator->Reset();
 
 	D3D12_RESOURCE_BARRIER barrier = {};
-	barrier.Type - D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Transition.pResource = m_RenderTargetResource[backBufferIndex];
+	barrier.Transition.pResource = m_RenderTargetResource[backBufferIndex].Get();
 	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
 	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	m_CommandList->Reset(frameContext->CommandAllocator, NULL);
+	m_CommandList->Reset(frameContext->CommandAllocator.Get(), NULL);
 	m_CommandList->ResourceBarrier(1, &barrier);
 
 	m_CommandList->ClearRenderTargetView(m_RenderTargetDescriptor[backBufferIndex], m_ClearColor, 0, NULL);
 	m_CommandList->OMSetRenderTargets(1, &m_RenderTargetDescriptor[backBufferIndex], FALSE, NULL);
-	m_CommandList->SetDescriptorHeaps(1, &m_SourceDescHeap);
+	m_CommandList->SetDescriptorHeaps(1, m_SourceDescHeap.GetAddressOf());
 	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 	m_CommandList->ResourceBarrier(1, &barrier);
 	m_CommandList->Close();
 
-	m_CommandQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&m_CommandList);
+	m_CommandQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)m_CommandList.GetAddressOf());
 
 	m_SwapChain->Present(1, 0);
 
 	fenceValue = m_FenceLastSignaledValue + 1;
-	m_CommandQueue->Signal(m_Fence, fenceValue);
+	m_CommandQueue->Signal(m_Fence.Get(), fenceValue);
 	m_FenceLastSignaledValue = fenceValue;
 	frameContext->FenceValue = fenceValue;
 }
