@@ -37,33 +37,29 @@ APILearning::D3D11Context::D3D11Context(HWND windowHandle)
         0,
         D3D11_SDK_VERSION,
         &swapChainDesc,
-        &m_SwapChain,
-        &m_Device,
+        m_SwapChain.GetAddressOf(),
+        m_Device.GetAddressOf(),
         &fl,
-        &m_DeviceContext
+        m_DeviceContext.GetAddressOf()
     );
 
     assert(hr == S_OK);
 
     ID3D11Texture2D* pBackBuffer;
     m_SwapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
-    hr = m_Device->CreateRenderTargetView(pBackBuffer, NULL, &m_RenderTargetView);
+    hr = m_Device->CreateRenderTargetView(pBackBuffer, NULL, m_RenderTargetView.GetAddressOf());
     assert(hr == S_OK);
     pBackBuffer->Release();
 }
 
 APILearning::D3D11Context::~D3D11Context()
 {
-    m_RenderTargetView->Release();
-    m_DeviceContext->Release();
-    m_Device->Release();
-    m_SwapChain->Release();
 }
 
 void APILearning::D3D11Context::Update()
 {
-    m_DeviceContext->OMSetRenderTargets(1, &m_RenderTargetView, NULL);
-    m_DeviceContext->ClearRenderTargetView(m_RenderTargetView, m_ClearColor);
+    m_DeviceContext->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), NULL);
+    m_DeviceContext->ClearRenderTargetView(m_RenderTargetView.Get(), m_ClearColor);
     m_SwapChain->Present(1, 0);
 }
 

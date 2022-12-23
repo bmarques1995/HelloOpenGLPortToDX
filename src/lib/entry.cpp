@@ -28,7 +28,7 @@ INT APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 int program()
 {
     APILearning::Window* window = new APILearning::Win32Window();
-    APILearning::GraphicsContext* context = new APILearning::D3D12Context(std::any_cast<HWND>(window->GetNativeWindow()));
+    APILearning::GraphicsContext* context = new APILearning::D3D11Context(std::any_cast<HWND>(window->GetNativeWindow()));
     context->SetClearColor(.7f,.3f,.9f,1.0f);
 
     while (!window->ShouldClose())
