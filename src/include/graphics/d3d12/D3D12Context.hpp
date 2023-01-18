@@ -18,6 +18,15 @@ namespace APILearning
 		uint64_t FenceValue;
 	};
 
+	struct Frame
+	{
+		UINT NextFrameIndex;
+		uint64_t FenceValue;
+		FrameContext* FrameContext;
+		uint32_t BackBufferIndex;
+		D3D12_RESOURCE_BARRIER Barrier = {};
+	};
+
 	class D3D12Context : public GraphicsContext
 	{
 	public:
@@ -27,8 +36,27 @@ namespace APILearning
 		virtual void Update() override;
 		virtual void SetClearColor(float r, float g, float b, float a) override;
 
+		virtual void ReceiveCommands() override;
+		virtual void DispatchCommands() override;
+		virtual void NewFrame() override;
+		virtual void EndFrame() override;
+		virtual void Present() override;
+
 	private:
 		float m_ClearColor[4];
+
+		void CreateDevice();
+		void CreateHeapDescriptor();
+		void CreateQueueDescriptor();
+		void CreateFrameContext();
+		void CreateCommandList();
+		void CreateFence();
+		void CreateSwapChain(HWND windowHandle);
+		void CreateRenderTargetView();
+
+		void UpdateFrameContext(uint64_t* fenceValue, FrameContext** frameContext, uint32_t* backBufferIndex, uint32_t nextFrameIndex);
+		void UpdateCommandList(FrameContext* frameContext, uint32_t backBufferIndex);
+		void UpdateFence(FrameContext** frameContext, uint64_t* fenceValue);
 
 		ComPtr<IDXGISwapChain3> m_SwapChain;
 		HANDLE m_SwapChainWaitableObject;
@@ -48,6 +76,8 @@ namespace APILearning
 
 		uint32_t m_BackBuffersAmount;
 		uint32_t m_FramesInFlightAmount;
+
+		Frame m_CurrentFrame;
 	};
 }
 
