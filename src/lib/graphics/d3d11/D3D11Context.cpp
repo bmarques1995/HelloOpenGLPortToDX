@@ -1,7 +1,7 @@
 #include "graphics/d3d11/D3D11Context.hpp"
 #include <cassert>
 
-APILearning::D3D11Context::D3D11Context(HWND windowHandle)
+APILearning::D3D11Context::D3D11Context(HWND windowHandle, uint32_t width, uint32_t height)
 {
     m_ClearColor[0] = 16.0f/255.0f;
     m_ClearColor[1] = 124.0f/255.0f;
@@ -11,6 +11,7 @@ APILearning::D3D11Context::D3D11Context(HWND windowHandle)
     CreateDevice();
     CreateSwapChain(windowHandle);
     CreateRenderTargetView();
+    SetViewport(width, height);
 }
 
 APILearning::D3D11Context::~D3D11Context()
@@ -50,6 +51,22 @@ void APILearning::D3D11Context::EndFrame()
 void APILearning::D3D11Context::Present()
 {
     m_SwapChain->Present(1, 0);
+}
+
+void APILearning::D3D11Context::Draw(uint32_t elements)
+{
+    m_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    m_DeviceContext->DrawIndexedInstanced(elements, 1, 0, 0, 0);
+}
+
+ID3D11Device* APILearning::D3D11Context::GetDevice() const
+{
+    return (ID3D11Device*)m_Device.Get();
+}
+
+ID3D11DeviceContext* APILearning::D3D11Context::GetDeviceContext() const
+{
+    return (ID3D11DeviceContext*)m_DeviceContext.Get();
 }
 
 void APILearning::D3D11Context::CreateDevice()
@@ -114,4 +131,18 @@ void APILearning::D3D11Context::CreateRenderTargetView()
     HRESULT hr = m_Device->CreateRenderTargetView(pBackBuffer, NULL, m_RenderTargetView.GetAddressOf());
     assert(hr == S_OK);
     pBackBuffer->Release();
+}
+
+void APILearning::D3D11Context::SetViewport(uint32_t width, uint32_t height)
+{
+    D3D11_VIEWPORT viewport;
+
+    viewport.TopLeftX = 0;
+    viewport.TopLeftY = 0;
+    viewport.Width = (float)width;
+    viewport.Height = (float)height;
+    viewport.MinDepth = .0f;
+    viewport.MaxDepth = 1.0f;
+
+    m_DeviceContext->RSSetViewports(1, &viewport);
 }

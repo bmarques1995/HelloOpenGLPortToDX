@@ -83,6 +83,10 @@ void APILearning::D3D12Context::Present()
 	m_SwapChain->Present(1, 0);
 }
 
+void APILearning::D3D12Context::Draw(uint32_t elements)
+{
+}
+
 void APILearning::D3D12Context::CreateDevice()
 {
 	HRESULT hr;

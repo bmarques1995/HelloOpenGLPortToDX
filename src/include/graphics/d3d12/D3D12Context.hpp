@@ -42,6 +42,7 @@ namespace APILearning
 		virtual void EndFrame() override;
 		virtual void Present() override;
 
+		virtual void Draw(uint32_t elements) override;
 	private:
 		float m_ClearColor[4];
 

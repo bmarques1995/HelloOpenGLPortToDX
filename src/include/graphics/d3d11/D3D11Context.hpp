@@ -13,7 +13,7 @@ namespace APILearning
 	class D3D11Context : public GraphicsContext
 	{
 	public:
-		D3D11Context(HWND windowHandle);
+		D3D11Context(HWND windowHandle, uint32_t width, uint32_t height);
 		~D3D11Context();
 
 		virtual void Update() override;
@@ -24,7 +24,10 @@ namespace APILearning
 		virtual void NewFrame() override;
 		virtual void EndFrame() override;
 		virtual void Present() override;
+		virtual void Draw(uint32_t elements) override;
 
+		ID3D11Device* GetDevice() const;
+		ID3D11DeviceContext* GetDeviceContext() const;
 	private:
 		ComPtr<ID3D11Device> m_Device;
 		ComPtr<ID3D11DeviceContext> m_DeviceContext;
@@ -34,6 +37,7 @@ namespace APILearning
 		void CreateDevice();
 		void CreateSwapChain(HWND windowHandle);
 		void CreateRenderTargetView();
+		void SetViewport(uint32_t width, uint32_t height);
 
 		float m_ClearColor[4];
 	};

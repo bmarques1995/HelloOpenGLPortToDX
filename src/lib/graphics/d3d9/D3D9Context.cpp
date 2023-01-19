@@ -72,3 +72,7 @@ void APILearning::D3D9Context::Present()
 {
     m_Device->Present(nullptr, nullptr, nullptr, nullptr);
 }
+
+void APILearning::D3D9Context::Draw(uint32_t elements)
+{
+}

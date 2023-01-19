@@ -26,6 +26,8 @@ namespace APILearning
 		virtual void EndFrame() override;
 		virtual void Present() override;
 
+		virtual void Draw(uint32_t elements) override;
+
 	private:
 		ComPtr<IDirect3D9> m_Direct3D9API;
 		ComPtr<IDirect3DDevice9> m_Device;

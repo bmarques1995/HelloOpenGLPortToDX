@@ -1,6 +1,8 @@
 #ifndef GRAPHICS_CONTEXT_HPP
 #define GRAPHICS_CONTEXT_HPP
 
+#include <cstdint>
+
 namespace APILearning
 {
 	class GraphicsContext
@@ -10,6 +12,7 @@ namespace APILearning
 		virtual void SetClearColor(float r, float g, float b, float a) = 0;
 		virtual void ReceiveCommands() = 0;
 		virtual void DispatchCommands() = 0;
+		virtual void Draw(uint32_t elements) = 0;
 		virtual void NewFrame() = 0;
 		virtual void EndFrame() = 0;
 		virtual void Present() = 0;
