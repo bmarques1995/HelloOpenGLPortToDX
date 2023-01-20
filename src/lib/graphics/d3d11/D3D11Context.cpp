@@ -135,14 +135,12 @@ void APILearning::D3D11Context::CreateRenderTargetView()
 
 void APILearning::D3D11Context::SetViewport(uint32_t width, uint32_t height)
 {
-    D3D11_VIEWPORT viewport;
+    m_Viewport.TopLeftX = 0;
+    m_Viewport.TopLeftY = 0;
+    m_Viewport.Width = (float)width;
+    m_Viewport.Height = (float)height;
+    m_Viewport.MinDepth = .0f;
+    m_Viewport.MaxDepth = 1.0f;
 
-    viewport.TopLeftX = 0;
-    viewport.TopLeftY = 0;
-    viewport.Width = (float)width;
-    viewport.Height = (float)height;
-    viewport.MinDepth = .0f;
-    viewport.MaxDepth = 1.0f;
-
-    m_DeviceContext->RSSetViewports(1, &viewport);
+    m_DeviceContext->RSSetViewports(1, &m_Viewport);
 }

@@ -34,6 +34,8 @@ namespace APILearning
 		ComPtr<IDXGISwapChain3> m_SwapChain;
 		ComPtr<ID3D11RenderTargetView> m_RenderTargetView;
 
+		D3D11_VIEWPORT m_Viewport;
+
 		void CreateDevice();
 		void CreateSwapChain(HWND windowHandle);
 		void CreateRenderTargetView();
