@@ -1,0 +1,6 @@
+#ifndef D3D12_BUFFER_HPP
+#define D3D12_BUFFER_HPP
+
+
+
+#endif // D3D12_BUFFER_HPP

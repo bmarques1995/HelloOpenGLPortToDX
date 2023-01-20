@@ -16,6 +16,7 @@ add_custom_target(copy_resources ALL
 if(WIN32)
 add_executable(HelloOpenGLPortToDX WIN32 ${PROJ_SOURCES} ${PROJ_HEADERS})
 target_include_directories(HelloOpenGLPortToDX PRIVATE "./src/include")
-target_link_libraries(HelloOpenGLPortToDX PRIVATE d3d11 d3d12 d3d9 dxgi dxguid d3dcompiler)
+target_link_directories(HelloOpenGLPortToDX PRIVATE "C:/Windows/System32")
+target_link_libraries(HelloOpenGLPortToDX PRIVATE d3d11 d3d12 d3d9 dxgi dxguid d3dcompiler runtimeobject)
 add_dependencies(HelloOpenGLPortToDX copy_resources)
 endif()

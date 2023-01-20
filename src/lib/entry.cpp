@@ -9,6 +9,7 @@
 #include "graphics/d3d11/D3D11Shader.hpp"
 #include "graphics/d3d11/D3D11Buffer.hpp"
 #include "graphics/d3d12/D3D12Context.hpp"
+#include "graphics/d3d12/D3D12Shader.hpp"
 #include "graphics/d3d9/D3D9Context.hpp"
 
 #include "utils/ShaderManager.hpp"
@@ -25,7 +26,7 @@ INT APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 int program()
 {
-    APILearning::ShaderGroup shaderGroup("assets/shaders/HLSL/triangle", APILearning::HLSL_VERSION::HLSL_4_0, 
+    APILearning::ShaderGroup shaderGroup("assets/shaders/HLSL/triangle", APILearning::HLSL_VERSION::HLSL_5_0, 
         { 
             {APILearning::SHADER_KIND::D3D_SHADER_KIND_VERTEX}, 
             {APILearning::SHADER_KIND::D3D_SHADER_KIND_PIXEL} 
@@ -50,10 +51,10 @@ int program()
     };
 
     APILearning::Window* window = new APILearning::Win32Window();
-    APILearning::GraphicsContext* context = new APILearning::D3D11Context(std::any_cast<HWND>(window->GetNativeWindow()), window->GetWidth(), window->GetHeight());
-    APILearning::Shader* shader = new APILearning::D3D11Shader((const APILearning::D3D11Context**)(&context), shaderGroup, bufferElements);
-    APILearning::VertexBuffer* vertexBuffer = new APILearning::D3D11VertexBuffer(vBuffer,sizeof(vBuffer),shader->GetStride(), (const APILearning::D3D11Context**)(&context));
-    APILearning::IndexBuffer* indexBuffer = new APILearning::D3D11IndexBuffer(iBuffer,sizeof(iBuffer)/sizeof(uint32_t), (const APILearning::D3D11Context**)(&context));
+    APILearning::GraphicsContext* context = new APILearning::D3D12Context(std::any_cast<HWND>(window->GetNativeWindow()), window->GetWidth(), window->GetHeight());
+    APILearning::Shader* shader = new APILearning::D3D12Shader((const APILearning::D3D12Context**)(&context), shaderGroup, bufferElements);
+    //APILearning::VertexBuffer* vertexBuffer = new APILearning::D3D11VertexBuffer(vBuffer,sizeof(vBuffer),shader->GetStride(), (const APILearning::D3D11Context**)(&context));
+    //APILearning::IndexBuffer* indexBuffer = new APILearning::D3D11IndexBuffer(iBuffer,sizeof(iBuffer)/sizeof(uint32_t), (const APILearning::D3D11Context**)(&context));
 
     while (!window->ShouldClose())
     {
@@ -61,17 +62,17 @@ int program()
         context->NewFrame();
         context->ReceiveCommands();
         context->Update();
-        shader->Stage();
-        vertexBuffer->Stage();
-        indexBuffer->Stage();
-        context->Draw(indexBuffer->GetCount());
+        //shader->Stage();
+        //vertexBuffer->Stage();
+        //indexBuffer->Stage();
+        //context->Draw(indexBuffer->GetCount());
         context->DispatchCommands();
         context->Present();
         context->EndFrame();
     }
 
-    delete indexBuffer;
-    delete vertexBuffer;
+    //delete indexBuffer;
+    //delete vertexBuffer;
     delete shader;
     delete context;
     delete window;

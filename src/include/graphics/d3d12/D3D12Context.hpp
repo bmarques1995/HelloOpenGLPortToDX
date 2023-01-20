@@ -4,6 +4,7 @@
 #include "interface/GraphicsContext.hpp"
 #include <d3d12.h>
 #include <dxgi1_6.h>
+#include <dxgidebug.h>
 #include <cstdint>
 
 #include <wrl.h>
@@ -15,7 +16,7 @@ namespace APILearning
 	struct FrameContext
 	{
 		ComPtr<ID3D12CommandAllocator> CommandAllocator;
-		uint64_t FenceValue;
+		uint64_t FenceValue = 0;
 	};
 
 	struct Frame
@@ -30,7 +31,7 @@ namespace APILearning
 	class D3D12Context : public GraphicsContext
 	{
 	public:
-		D3D12Context(HWND windowHandle, uint32_t numBackBuffers = 3, uint32_t numFramesInFlight = 3);
+		D3D12Context(HWND windowHandle, uint32_t width, uint32_t height, uint32_t numBackBuffers = 3, uint32_t numFramesInFlight = 3);
 		~D3D12Context();
 
 		virtual void Update() override;
@@ -43,6 +44,10 @@ namespace APILearning
 		virtual void Present() override;
 
 		virtual void Draw(uint32_t elements) override;
+
+		ID3D12Device* GetDevice() const;
+		ID3D12CommandList* GetCommandList() const;
+
 	private:
 		float m_ClearColor[4];
 
@@ -54,6 +59,7 @@ namespace APILearning
 		void CreateFence();
 		void CreateSwapChain(HWND windowHandle);
 		void CreateRenderTargetView();
+		void CreateViewport(uint32_t width, uint32_t height);
 
 		void UpdateFrameContext(uint64_t* fenceValue, FrameContext** frameContext, uint32_t* backBufferIndex, uint32_t nextFrameIndex);
 		void UpdateCommandList(FrameContext* frameContext, uint32_t backBufferIndex);
@@ -68,6 +74,7 @@ namespace APILearning
 		ComPtr<ID3D12CommandQueue> m_CommandQueue;
 		ComPtr<ID3D12GraphicsCommandList> m_CommandList;
 		ComPtr<ID3D12Fence> m_Fence;
+		D3D12_VIEWPORT m_Viewport;
 		HANDLE m_FenceEvent;
 		D3D12_CPU_DESCRIPTOR_HANDLE* m_RenderTargetDescriptor;
 		FrameContext* m_FrameContext;

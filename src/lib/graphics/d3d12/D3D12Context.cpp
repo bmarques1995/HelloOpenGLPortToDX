@@ -1,7 +1,7 @@
 #include "graphics/d3d12/D3D12Context.hpp"
 #include <cassert>
 
-APILearning::D3D12Context::D3D12Context(HWND windowHandle, uint32_t numBackBuffers, uint32_t numFramesInFlight) :
+APILearning::D3D12Context::D3D12Context(HWND windowHandle, uint32_t width, uint32_t height, uint32_t numBackBuffers, uint32_t numFramesInFlight) :
 	m_BackBuffersAmount(numBackBuffers), m_FramesInFlightAmount(numFramesInFlight)
 {
 	m_ClearColor[0] = 1.0f;
@@ -18,6 +18,7 @@ APILearning::D3D12Context::D3D12Context(HWND windowHandle, uint32_t numBackBuffe
 	CreateFence();
 	CreateSwapChain(windowHandle);
 	CreateRenderTargetView();
+	CreateViewport(width, height);
 }
 
 APILearning::D3D12Context::~D3D12Context()
@@ -85,6 +86,18 @@ void APILearning::D3D12Context::Present()
 
 void APILearning::D3D12Context::Draw(uint32_t elements)
 {
+	//m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//m_CommandList->DrawIndexedInstanced(elements, 1, 0, 0, 0);
+}
+
+ID3D12Device* APILearning::D3D12Context::GetDevice() const
+{
+	return m_Device.Get();
+}
+
+ID3D12CommandList* APILearning::D3D12Context::GetCommandList() const
+{
+	return m_CommandList.Get();
 }
 
 void APILearning::D3D12Context::CreateDevice()
@@ -103,15 +116,29 @@ void APILearning::D3D12Context::CreateDevice()
 	assert(hr == S_OK);
 
 #if defined (_DEBUG) || defined(DEBUG)
+	
 	ID3D12InfoQueue* infoQueue;
+	D3D12_MESSAGE_ID hide[] =
+	{
+		D3D12_MESSAGE_ID_MAP_INVALID_NULLRANGE,
+		D3D12_MESSAGE_ID_UNMAP_INVALID_NULLRANGE,
+		// Workarounds for debug layer issues on hybrid-graphics systems
+		D3D12_MESSAGE_ID_EXECUTECOMMANDLISTS_WRONGSWAPCHAINBUFFERREFERENCE,
+		D3D12_MESSAGE_ID_RESOURCE_BARRIER_MISMATCHING_COMMAND_LIST_TYPE,
+	};
+	D3D12_INFO_QUEUE_FILTER filter = {};
+	filter.DenyList.NumIDs = static_cast<UINT>(sizeof(hide)/sizeof(D3D12_MESSAGE_ID));
+	filter.DenyList.pIDList = hide;
 	m_Device->QueryInterface(IID_PPV_ARGS(&infoQueue));
 	infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
 	infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
 	infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
 	infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_INFO, true);
 	infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_MESSAGE, true);
+	infoQueue->AddStorageFilterEntries(&filter);
 	infoQueue->Release();
 	m_Debugger->Release();
+
 #endif
 }
 
@@ -163,6 +190,7 @@ void APILearning::D3D12Context::CreateFence()
 
 void APILearning::D3D12Context::CreateSwapChain(HWND windowHandle)
 {
+	HRESULT hr;
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc = { 0 };
 	swapChainDesc.BufferCount = m_BackBuffersAmount;
 	swapChainDesc.Width = 0;
@@ -177,18 +205,44 @@ void APILearning::D3D12Context::CreateSwapChain(HWND windowHandle)
 	swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
 	swapChainDesc.Stereo = FALSE;
 
+	UINT dxgiFactoryFlags = 0;
+
+#if defined (_DEBUG) || defined(DEBUG)
+	ComPtr<IDXGIInfoQueue> dxgiInfoQueue;
+	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(dxgiInfoQueue.GetAddressOf()))))
+	{
+		dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
+
+		dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, true);
+		dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, true);
+
+		DXGI_INFO_QUEUE_MESSAGE_ID hide[] =
+		{
+			80 /* IDXGISwapChain::GetContainingOutput: The swapchain's adapter does not control the output on which the swapchain's window resides. */,
+		};
+		DXGI_INFO_QUEUE_FILTER filter = {};
+		filter.DenyList.NumIDs = static_cast<UINT>(sizeof(hide)/sizeof(DXGI_INFO_QUEUE_MESSAGE_ID));
+		filter.DenyList.pIDList = hide;
+		dxgiInfoQueue->AddStorageFilterEntries(DXGI_DEBUG_DXGI, &filter);
+	}
+#endif
+
 	IDXGIFactory4* dxgiFactory = nullptr;
 	IDXGISwapChain1* swapChainTemp = nullptr;
-	HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(&dxgiFactory));
+	hr = CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&dxgiFactory));
 	assert(hr == S_OK);
 	hr = dxgiFactory->CreateSwapChainForHwnd(m_CommandQueue.Get(), windowHandle, &swapChainDesc, nullptr, nullptr, &swapChainTemp);
 	assert(hr == S_OK);
 	hr = swapChainTemp->QueryInterface(IID_PPV_ARGS(m_SwapChain.GetAddressOf()));
 	assert(hr == S_OK);
+
 	swapChainTemp->Release();
 	dxgiFactory->Release();
 	m_SwapChain->SetMaximumFrameLatency(m_BackBuffersAmount);
 	m_SwapChainWaitableObject = m_SwapChain->GetFrameLatencyWaitableObject();
+
+
+
 }
 
 void APILearning::D3D12Context::CreateRenderTargetView()
@@ -202,6 +256,16 @@ void APILearning::D3D12Context::CreateRenderTargetView()
 		m_Device->CreateRenderTargetView(pBackBuffer, nullptr, m_RenderTargetDescriptor[i]);
 		m_RenderTargetResource[i] = pBackBuffer;
 	}
+}
+
+void APILearning::D3D12Context::CreateViewport(uint32_t width, uint32_t height)
+{
+	m_Viewport.TopLeftX = 0;
+	m_Viewport.TopLeftY = 0;
+	m_Viewport.Width = (float) width;
+	m_Viewport.Height = (float) height;
+	m_Viewport.MinDepth = .0f;
+	m_Viewport.MaxDepth = 1.0f;
 }
 
 void APILearning::D3D12Context::CreateQueueDescriptor()
