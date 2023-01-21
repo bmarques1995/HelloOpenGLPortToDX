@@ -11,7 +11,7 @@ APILearning::Win32Window::Win32Window(WindowProps props)
     HINSTANCE hInstance = GetModuleHandleW(NULL);
     LPWSTR cmdLine = GetCommandLineW();
     DWORD cmdShow = 10;
-    RECT windowDimensions = { 0, 0, m_Width, m_Height };
+    RECT windowDimensions = { 0, 0, (LONG)m_Width, (LONG)m_Height };
 
     CreateWindowClass(&hInstance);
     RegisterClassExW(&m_WindowClass);
