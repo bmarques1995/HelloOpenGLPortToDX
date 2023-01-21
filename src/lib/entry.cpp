@@ -12,7 +12,6 @@
 #include "graphics/d3d12/D3D12Context.hpp"
 #include "graphics/d3d12/D3D12Shader.hpp"
 #include "graphics/d3d12/D3D12Buffer.hpp"
-#include "graphics/d3d9/D3D9Context.hpp"
 
 #include "utils/ShaderManager.hpp"
 
