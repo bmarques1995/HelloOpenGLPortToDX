@@ -9,6 +9,8 @@ APILearning::D3D11Shader::D3D11Shader(const D3D11Context** context, const Shader
 
     m_DeviceContext = (*context)->GetDeviceContext();
 
+    RegisterShaderBuilder();
+
     auto nativeElements = m_Layout.GetElements();
     D3D11_INPUT_ELEMENT_DESC* ied = new D3D11_INPUT_ELEMENT_DESC[elements.size()];
 
@@ -44,7 +46,7 @@ APILearning::D3D11Shader::~D3D11Shader()
 void APILearning::D3D11Shader::Stage() const
 {
     m_DeviceContext->IASetInputLayout(m_InputLayout.Get());
-    auto details = m_ShaderGroup.GetShaderDetails();
+    std::vector<ShaderDetails> details = m_ShaderGroup.GetShaderDetails();
     for (size_t i = 0; i < details.size(); ++i)
     {
         switch (details[i].ShaderKind)
@@ -99,54 +101,78 @@ void APILearning::D3D11Shader::BuildShader(std::string_view baseShaderPath, SHAD
 {
     HRESULT hr;
     std::string_view filepath = ShaderManager::BuildBlobFilename(shaderKind, hlslVersion, baseShaderPath);
-    std::wstring w_Filepath = std::wstring(filepath.begin(), filepath.end());
-    switch (shaderKind)
-    {
-    case APILearning::SHADER_KIND::D3D_SHADER_KIND_VERTEX:
-    {
-        D3DReadFileToBlob(w_Filepath.c_str(), m_VertexBlob.GetAddressOf());
-        hr = device->CreateVertexShader(m_VertexBlob->GetBufferPointer(), m_VertexBlob->GetBufferSize(), nullptr, m_VertexShader.GetAddressOf());
-        assert(hr == S_OK);
-        break; 
-    }
-    case APILearning::SHADER_KIND::D3D_SHADER_KIND_PIXEL:
-    {
-        D3DReadFileToBlob(w_Filepath.c_str(), m_PixelBlob.GetAddressOf());
-        hr = device->CreatePixelShader(m_PixelBlob->GetBufferPointer(), m_PixelBlob->GetBufferSize(), nullptr, m_PixelShader.GetAddressOf());
-        assert(hr == S_OK);
-        break; 
-    }
-    case APILearning::SHADER_KIND::D3D_SHADER_KIND_GEOMETRY: 
-    {
-        D3DReadFileToBlob(w_Filepath.c_str(), m_GeometryBlob.GetAddressOf());
-        hr = device->CreateGeometryShader(m_GeometryBlob->GetBufferPointer(), m_GeometryBlob->GetBufferSize(), nullptr, m_GeometryShader.GetAddressOf());
-        assert(hr == S_OK);
-        break; 
-    }    
-    case APILearning::SHADER_KIND::D3D_SHADER_KIND_HULL:
-    {
-        D3DReadFileToBlob(w_Filepath.c_str(), m_HullBlob.GetAddressOf());
-        hr = device->CreateHullShader(m_HullBlob->GetBufferPointer(), m_HullBlob->GetBufferSize(), nullptr, m_HullShader.GetAddressOf());
-        assert(hr == S_OK);
-        break;
-    }
-    case APILearning::SHADER_KIND::D3D_SHADER_KIND_DOMAIN:
-    {
-        D3DReadFileToBlob(w_Filepath.c_str(), m_DomainBlob.GetAddressOf());
-        hr = device->CreateDomainShader(m_DomainBlob->GetBufferPointer(), m_DomainBlob->GetBufferSize(), nullptr, m_DomainShader.GetAddressOf());
-        assert(hr == S_OK);
-        break;
-    }
-    case APILearning::SHADER_KIND::D3D_SHADER_KIND_COMPUTE:
-    {
-        D3DReadFileToBlob(w_Filepath.data(), m_ComputeBlob.GetAddressOf());
-        hr = device->CreateComputeShader(m_ComputeBlob->GetBufferPointer(), m_ComputeBlob->GetBufferSize(), nullptr, m_ComputeShader.GetAddressOf());
-        assert(hr == S_OK);
-        break;
-    }
-    default:
-        break;
-    }
+    m_ShaderBuilders[shaderKind](filepath, device);
+}
+
+
+void APILearning::D3D11Shader::RegisterShaderBuilder()
+{
+    m_ShaderBuilders[SHADER_KIND::D3D_SHADER_KIND_VERTEX] = std::bind(&D3D11Shader::BuildVertexShader, this, std::placeholders::_1, std::placeholders::_2);
+    m_ShaderBuilders[SHADER_KIND::D3D_SHADER_KIND_PIXEL] = std::bind(&D3D11Shader::BuildPixelShader, this, std::placeholders::_1, std::placeholders::_2);
+    m_ShaderBuilders[SHADER_KIND::D3D_SHADER_KIND_GEOMETRY] = std::bind(&D3D11Shader::BuildGeometryShader, this, std::placeholders::_1, std::placeholders::_2);
+    m_ShaderBuilders[SHADER_KIND::D3D_SHADER_KIND_HULL] = std::bind(&D3D11Shader::BuildHullShader, this, std::placeholders::_1, std::placeholders::_2);
+    m_ShaderBuilders[SHADER_KIND::D3D_SHADER_KIND_DOMAIN] = std::bind(&D3D11Shader::BuildDomainShader, this, std::placeholders::_1, std::placeholders::_2);
+    m_ShaderBuilders[SHADER_KIND::D3D_SHADER_KIND_COMPUTE] = std::bind(&D3D11Shader::BuildComputeShader, this, std::placeholders::_1, std::placeholders::_2);
+}
+
+void APILearning::D3D11Shader::BuildVertexShader(std::string_view blobPath, ID3D11Device* device)
+{
+    HRESULT hr;
+    std::wstring w_Filepath = std::wstring(blobPath.begin(), blobPath.end());
+    D3DReadFileToBlob(w_Filepath.c_str(), m_VertexBlob.GetAddressOf());
+    hr = device->CreateVertexShader(m_VertexBlob->GetBufferPointer(), m_VertexBlob->GetBufferSize(), nullptr, m_VertexShader.GetAddressOf());
+    m_ShaderPointers[SHADER_KIND::D3D_SHADER_KIND_VERTEX] = m_VertexShader.Get();
+    assert(hr == S_OK);
+}
+
+void APILearning::D3D11Shader::BuildPixelShader(std::string_view blobPath, ID3D11Device* device)
+{
+    HRESULT hr;
+    std::wstring w_Filepath = std::wstring(blobPath.begin(), blobPath.end());
+    D3DReadFileToBlob(w_Filepath.c_str(), m_PixelBlob.GetAddressOf());
+    hr = device->CreatePixelShader(m_PixelBlob->GetBufferPointer(), m_PixelBlob->GetBufferSize(), nullptr, m_PixelShader.GetAddressOf());
+    m_ShaderPointers[SHADER_KIND::D3D_SHADER_KIND_PIXEL] = m_PixelShader.Get();
+    assert(hr == S_OK);
+}
+
+void APILearning::D3D11Shader::BuildGeometryShader(std::string_view blobPath, ID3D11Device* device)
+{
+    HRESULT hr;
+    std::wstring w_Filepath = std::wstring(blobPath.begin(), blobPath.end());
+    D3DReadFileToBlob(w_Filepath.c_str(), m_GeometryBlob.GetAddressOf());
+    hr = device->CreateGeometryShader(m_GeometryBlob->GetBufferPointer(), m_GeometryBlob->GetBufferSize(), nullptr, m_GeometryShader.GetAddressOf());
+    m_ShaderPointers[SHADER_KIND::D3D_SHADER_KIND_GEOMETRY] = m_GeometryShader.Get();
+    assert(hr == S_OK);
+}
+
+void APILearning::D3D11Shader::BuildHullShader(std::string_view blobPath, ID3D11Device* device)
+{
+    HRESULT hr;
+    std::wstring w_Filepath = std::wstring(blobPath.begin(), blobPath.end());
+    D3DReadFileToBlob(w_Filepath.c_str(), m_HullBlob.GetAddressOf());
+    hr = device->CreateHullShader(m_HullBlob->GetBufferPointer(), m_HullBlob->GetBufferSize(), nullptr, m_HullShader.GetAddressOf());
+    m_ShaderPointers[SHADER_KIND::D3D_SHADER_KIND_HULL] = m_HullShader.Get();
+    assert(hr == S_OK);
+}
+
+void APILearning::D3D11Shader::BuildDomainShader(std::string_view blobPath, ID3D11Device* device)
+{
+    HRESULT hr;
+    std::wstring w_Filepath = std::wstring(blobPath.begin(), blobPath.end());
+    D3DReadFileToBlob(w_Filepath.c_str(), m_DomainBlob.GetAddressOf());
+    hr = device->CreateDomainShader(m_DomainBlob->GetBufferPointer(), m_DomainBlob->GetBufferSize(), nullptr, m_DomainShader.GetAddressOf());
+    m_ShaderPointers[SHADER_KIND::D3D_SHADER_KIND_DOMAIN] = m_DomainShader.Get();
+    assert(hr == S_OK);
+}
+
+void APILearning::D3D11Shader::BuildComputeShader(std::string_view blobPath, ID3D11Device* device)
+{
+    HRESULT hr;
+    std::wstring w_Filepath = std::wstring(blobPath.begin(), blobPath.end());
+    D3DReadFileToBlob(w_Filepath.data(), m_ComputeBlob.GetAddressOf());
+    hr = device->CreateComputeShader(m_ComputeBlob->GetBufferPointer(), m_ComputeBlob->GetBufferSize(), nullptr, m_ComputeShader.GetAddressOf());
+    m_ShaderPointers[SHADER_KIND::D3D_SHADER_KIND_COMPUTE] = m_ComputeShader.Get();
+    assert(hr == S_OK);
 }
 
 DXGI_FORMAT APILearning::D3D11Shader::GetFormat(ShaderDataType type)

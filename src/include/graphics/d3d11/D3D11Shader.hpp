@@ -5,6 +5,8 @@
 #include "D3D11Context.hpp"
 #include "utils/ShaderManager.hpp"
 #include <functional>
+#include <unordered_map>
+#include <any>
 
 namespace APILearning
 {
@@ -35,8 +37,24 @@ namespace APILearning
 		ComPtr<ID3D11ComputeShader> m_ComputeShader;
 		ComPtr<ID3DBlob> m_ComputeBlob;
 
+		std::unordered_map<SHADER_KIND, std::function<void(std::string_view, ID3D11Device*)>> m_ShaderBuilders;
+		mutable std::unordered_map<SHADER_KIND, std::function<void(std::any*, const ID3D11DeviceContext*)>> m_ShaderStagers;
+		mutable std::unordered_map<SHADER_KIND, std::any> m_ShaderPointers;
+
 		//temp will be replaced with lambdas
 		void BuildShader(std::string_view baseShaderPath, SHADER_KIND shaderKind, HLSL_VERSION hlslVersion, ID3D11Device* device);
+
+		void RegisterShaderBuilder();
+		void RegisterShaderStager();
+
+		void BuildVertexShader(std::string_view blobPath, ID3D11Device* device);
+		void BuildPixelShader(std::string_view blobPath, ID3D11Device* device);
+		void BuildGeometryShader(std::string_view blobPath, ID3D11Device* device);
+		void BuildHullShader(std::string_view blobPath, ID3D11Device* device);
+		void BuildDomainShader(std::string_view blobPath, ID3D11Device* device);
+		void BuildComputeShader(std::string_view blobPath, ID3D11Device* device);
+
+		
 
 		BufferLayout m_Layout;
 		ID3D11DeviceContext* m_DeviceContext;
