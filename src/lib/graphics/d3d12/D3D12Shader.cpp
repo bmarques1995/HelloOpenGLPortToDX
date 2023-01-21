@@ -23,17 +23,19 @@ APILearning::D3D12Shader::D3D12Shader(const D3D12Context** context, const Shader
 
     ID3D12Device* device = (*context)->GetDevice();
 
-    ID3D12RootSignature* rootSignature;
-    CreateGraphicsRootSignature(&rootSignature, device);
+    CreateGraphicsRootSignature(&m_RootSignature, device);
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsDesc = {};
     graphicsDesc.NodeMask = 1;
     graphicsDesc.InputLayout = { ied, (uint32_t)nativeElements.size()};
     graphicsDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
-    graphicsDesc.pRootSignature = rootSignature;
+    graphicsDesc.pRootSignature = m_RootSignature.Get();
     graphicsDesc.SampleMask = UINT_MAX;
-    graphicsDesc.NumRenderTargets;
+    graphicsDesc.NumRenderTargets = 1;
     graphicsDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+    graphicsDesc.DSVFormat = DXGI_FORMAT_UNKNOWN;
+    //Pelo amor de Deus, não esquece de mim
+    graphicsDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
     graphicsDesc.SampleDesc.Count = 1;
     graphicsDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
     
@@ -55,15 +57,18 @@ APILearning::D3D12Shader::D3D12Shader(const D3D12Context** context, const Shader
 
 APILearning::D3D12Shader::~D3D12Shader()
 {
+    m_CommandList = nullptr;
 }
 
 void APILearning::D3D12Shader::Stage() const
 {
+    m_CommandList->SetGraphicsRootSignature(m_RootSignature.Get());
+    m_CommandList->SetPipelineState(m_GraphicsPipeline.Get());
 }
 
 uint32_t APILearning::D3D12Shader::GetStride() const
 {
-	return 0;
+	return m_Layout.GetStride();
 }
 
 uint32_t APILearning::D3D12Shader::GetOffset() const

@@ -46,7 +46,7 @@ namespace APILearning
 		virtual void Draw(uint32_t elements) override;
 
 		ID3D12Device* GetDevice() const;
-		ID3D12CommandList* GetCommandList() const;
+		ID3D12GraphicsCommandList* GetCommandList() const;
 
 	private:
 		float m_ClearColor[4];
@@ -75,6 +75,7 @@ namespace APILearning
 		ComPtr<ID3D12GraphicsCommandList> m_CommandList;
 		ComPtr<ID3D12Fence> m_Fence;
 		D3D12_VIEWPORT m_Viewport;
+		D3D12_RECT m_ScissorRect;
 		HANDLE m_FenceEvent;
 		D3D12_CPU_DESCRIPTOR_HANDLE* m_RenderTargetDescriptor;
 		FrameContext* m_FrameContext;

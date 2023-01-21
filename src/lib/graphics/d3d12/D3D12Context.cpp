@@ -86,8 +86,10 @@ void APILearning::D3D12Context::Present()
 
 void APILearning::D3D12Context::Draw(uint32_t elements)
 {
-	//m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	//m_CommandList->DrawIndexedInstanced(elements, 1, 0, 0, 0);
+	m_CommandList->RSSetViewports(1, &m_Viewport);
+	m_CommandList->RSSetScissorRects(1, &m_ScissorRect);
+	m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_CommandList->DrawIndexedInstanced(elements, 1, 0, 0, 0);
 }
 
 ID3D12Device* APILearning::D3D12Context::GetDevice() const
@@ -95,7 +97,7 @@ ID3D12Device* APILearning::D3D12Context::GetDevice() const
 	return m_Device.Get();
 }
 
-ID3D12CommandList* APILearning::D3D12Context::GetCommandList() const
+ID3D12GraphicsCommandList* APILearning::D3D12Context::GetCommandList() const
 {
 	return m_CommandList.Get();
 }
@@ -115,8 +117,9 @@ void APILearning::D3D12Context::CreateDevice()
 	hr = D3D12CreateDevice(nullptr, featureLevel, IID_PPV_ARGS(m_Device.GetAddressOf()));
 	assert(hr == S_OK);
 
+
 #if defined (_DEBUG) || defined(DEBUG)
-	
+
 	ID3D12InfoQueue* infoQueue;
 	D3D12_MESSAGE_ID hide[] =
 	{
@@ -208,6 +211,7 @@ void APILearning::D3D12Context::CreateSwapChain(HWND windowHandle)
 	UINT dxgiFactoryFlags = 0;
 
 #if defined (_DEBUG) || defined(DEBUG)
+//#if 0
 	ComPtr<IDXGIInfoQueue> dxgiInfoQueue;
 	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(dxgiInfoQueue.GetAddressOf()))))
 	{
@@ -260,12 +264,13 @@ void APILearning::D3D12Context::CreateRenderTargetView()
 
 void APILearning::D3D12Context::CreateViewport(uint32_t width, uint32_t height)
 {
-	m_Viewport.TopLeftX = 0;
-	m_Viewport.TopLeftY = 0;
-	m_Viewport.Width = (float) width;
-	m_Viewport.Height = (float) height;
+	m_Viewport.TopLeftX = m_Viewport.TopLeftY = m_ScissorRect.left = m_ScissorRect.top = 0;
+	m_Viewport.Width = m_ScissorRect.right = (float) width;
+	m_Viewport.Height = m_ScissorRect.bottom = (float) height;
 	m_Viewport.MinDepth = .0f;
 	m_Viewport.MaxDepth = 1.0f;
+
+	
 }
 
 void APILearning::D3D12Context::CreateQueueDescriptor()

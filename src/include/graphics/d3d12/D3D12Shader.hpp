@@ -24,6 +24,7 @@ namespace APILearning
 		virtual uint32_t GetOffset() const override;
 	private:
 		ComPtr<ID3D12PipelineState> m_GraphicsPipeline;
+		ComPtr<ID3D12RootSignature> m_RootSignature;
 		//ComPtr<ID3D12PipelineState> m_ComputePipeline;
 
 		ComPtr<ID3DBlob> m_VertexBlob;
@@ -33,7 +34,7 @@ namespace APILearning
 		ComPtr<ID3DBlob> m_DomainBlob;
 		ComPtr<ID3DBlob> m_ComputeBlob;
 
-		ID3D12CommandList* m_CommandList;
+		ID3D12GraphicsCommandList* m_CommandList;
 		BufferLayout m_Layout;
 		ShaderGroup m_ShaderGroup;
 
